@@ -68,6 +68,17 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => localStorage.clear());
 });
 
+test('键盘用户可以通过跳转链接直接进入主要内容', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Tab');
+
+  const skipLink = page.getByRole('link', { name: '跳到查询内容' });
+  await expect(skipLink).toBeVisible();
+  await expect(skipLink).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#main-content')).toBeFocused();
+});
+
 test('用户可以查询账户、查看代表仓库并获得本地历史', async ({ page }) => {
   const getRequestCount = await mockGitHub(page);
   await page.goto('/');

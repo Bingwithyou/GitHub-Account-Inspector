@@ -30,6 +30,31 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 a { color: inherit; }
 
+.skip-link {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 50;
+  padding: 11px 15px;
+  border: 2px solid var(--ink);
+  background: var(--white);
+  color: var(--ink);
+  box-shadow: 4px 4px 0 var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  transform: translateY(-160%);
+  transition: transform 140ms ease;
+}
+.skip-link:focus { transform: translateY(0); }
+
+:where(a, button, input):focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+#main-content:focus { outline: none; }
+
 .noise {
   position: fixed;
   inset: 0;
@@ -165,6 +190,7 @@ h1 em { color: var(--accent); font-weight: 400; }
   font-size: 18px;
   font-weight: 550;
 }
+.search-box input:focus-visible { outline: 0; }
 
 .search-box input::placeholder { color: #9a968c; }
 
@@ -392,11 +418,13 @@ h1 em { color: var(--accent); font-weight: 400; }
   transition: background 160ms ease, color 160ms ease;
 }
 .repo-card:hover { background: var(--ink); color: var(--white); }
+.repo-card:focus-visible { background: var(--ink); color: var(--white); }
 .repo-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .repo-card-name { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 18px Georgia, serif; }
 .repo-arrow { color: var(--accent); font-size: 17px; }
 .repo-description { margin: 13px 0 20px; color: var(--muted); font-size: 11px; line-height: 1.55; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.repo-card:hover .repo-description, .repo-card:hover .repo-meta { color: #c9c5bb; }
+.repo-card:hover .repo-description, .repo-card:hover .repo-meta,
+.repo-card:focus-visible .repo-description, .repo-card:focus-visible .repo-meta { color: #c9c5bb; }
 .repo-meta { display: flex; flex-wrap: wrap; gap: 9px 13px; margin-top: auto; color: #58564f; font-size: 10px; }
 .language { display: inline-flex; align-items: center; gap: 5px; }
 .language::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }

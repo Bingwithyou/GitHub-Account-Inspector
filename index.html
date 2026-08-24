@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
+    <a class="skip-link" href="#main-content">跳到查询内容</a>
     <div class="noise" aria-hidden="true"></div>
     <header class="site-header">
       <a class="brand" href="./" aria-label="GitScope 首页">
@@ -27,7 +28,7 @@
       </a>
     </header>
 
-    <main>
+    <main id="main-content" tabindex="-1">
       <section class="hero" aria-labelledby="page-title">
         <div class="eyebrow"><span></span> PUBLIC DATA LOOKUP</div>
         <h1 id="page-title">一个用户名，<br /><em>看见账户的时间。</em></h1>
@@ -111,7 +112,7 @@
             <div>
               <div class="data-label-row">
                 <p class="data-label">数字用户 ID</p>
-                <button class="info-button" type="button" data-help-toggle="user-id-help" aria-expanded="false" aria-label="解释数字用户 ID">?</button>
+                <button class="info-button" type="button" data-help-toggle="user-id-help" aria-expanded="false" aria-controls="user-id-help" aria-label="解释数字用户 ID">?</button>
               </div>
               <p class="data-value mono" id="user-id"></p>
               <p class="field-help" id="user-id-help" hidden>REST API 使用的数字标识。用户名可以修改，这个 ID 通常用于持续识别同一个用户。</p>
@@ -134,7 +135,7 @@
             <div>
               <div class="data-label-row">
                 <p class="data-label">Node ID</p>
-                <button class="info-button" type="button" data-help-toggle="node-id-help" aria-expanded="false" aria-label="解释 Node ID">?</button>
+                <button class="info-button" type="button" data-help-toggle="node-id-help" aria-expanded="false" aria-controls="node-id-help" aria-label="解释 Node ID">?</button>
               </div>
               <p class="data-value mono small" id="node-id"></p>
               <p class="field-help" id="node-id-help" hidden>GitHub GraphQL 使用的全局对象标识。请把它当作不可拆解的字符串使用。</p>
