@@ -32,7 +32,7 @@
         <div class="eyebrow"><span></span> PUBLIC DATA LOOKUP</div>
         <h1 id="page-title">一个用户名，<br /><em>看见账户的时间。</em></h1>
         <p class="hero-copy">
-          查询 GitHub 账户的注册日期、永久数字 ID 与公开档案。无需登录，不会保存你的查询。
+          查询 GitHub 账户的注册日期、数字用户 ID 与公开档案。无需登录，查询历史仅保存在此浏览器。
         </p>
 
         <form class="search-form" id="search-form" novalidate>
@@ -64,6 +64,14 @@
           <button type="button" data-user="octocat">@octocat</button>
           <button type="button" data-user="torvalds">@torvalds</button>
           <button type="button" data-user="yyx990803">@yyx990803</button>
+        </div>
+
+        <div class="recent-searches" id="recent-searches" hidden>
+          <div class="recent-heading">
+            <span>最近查询 · 仅保存在本机</span>
+            <button type="button" id="clear-history">清空</button>
+          </div>
+          <div class="recent-list" id="recent-list" aria-label="最近查询"></div>
         </div>
       </section>
 
@@ -101,8 +109,12 @@
         <div class="data-grid">
           <article class="data-item featured">
             <div>
-              <p class="data-label">永久数字 ID</p>
+              <div class="data-label-row">
+                <p class="data-label">数字用户 ID</p>
+                <button class="info-button" type="button" data-help-toggle="user-id-help" aria-expanded="false" aria-label="解释数字用户 ID">?</button>
+              </div>
               <p class="data-value mono" id="user-id"></p>
+              <p class="field-help" id="user-id-help" hidden>REST API 使用的数字标识。用户名可以修改，这个 ID 通常用于持续识别同一个用户。</p>
             </div>
             <button class="copy-button" type="button" data-copy="user-id" aria-label="复制数字 ID">复制</button>
           </article>
@@ -120,8 +132,12 @@
           </article>
           <article class="data-item node-item">
             <div>
-              <p class="data-label">Node ID</p>
+              <div class="data-label-row">
+                <p class="data-label">Node ID</p>
+                <button class="info-button" type="button" data-help-toggle="node-id-help" aria-expanded="false" aria-label="解释 Node ID">?</button>
+              </div>
               <p class="data-value mono small" id="node-id"></p>
+              <p class="field-help" id="node-id-help" hidden>GitHub GraphQL 使用的全局对象标识。请把它当作不可拆解的字符串使用。</p>
             </div>
             <button class="copy-button" type="button" data-copy="node-id" aria-label="复制 Node ID">复制</button>
           </article>
@@ -131,9 +147,21 @@
           </article>
         </div>
 
+        <section class="repos-section" aria-labelledby="repos-title">
+          <div class="repos-heading">
+            <div>
+              <p class="overline">REPOSITORY HIGHLIGHTS</p>
+              <h3 id="repos-title">代表仓库</h3>
+            </div>
+            <p>从最近更新的公开仓库中按 Star 排序</p>
+          </div>
+          <div class="repos-grid" id="repos-grid"></div>
+        </section>
+
         <div class="result-footer">
           <p id="rate-limit">数据来自 GitHub REST API</p>
           <div class="result-actions">
+            <button type="button" id="copy-summary-button">复制账户摘要</button>
             <button type="button" id="share-button">复制查询链接</button>
             <a id="view-profile" href="#" target="_blank" rel="noreferrer">查看 GitHub 主页 ↗</a>
           </div>
@@ -144,12 +172,12 @@
         <div>
           <span class="about-number">01</span>
           <h3>公开且透明</h3>
-          <p>所有信息均来自 GitHub 公开接口，页面不设置后端，也不收集查询记录。</p>
+          <p>所有信息均来自 GitHub 公开接口；最近查询与缓存只保存在本机，可随时清空。</p>
         </div>
         <div>
           <span class="about-number">02</span>
           <h3>ID 是什么？</h3>
-          <p>用户名可以修改，数字 ID 则永久对应同一个账户，适合做身份关联。</p>
+          <p>用户名可以修改，数字用户 ID 适合做身份关联；Node ID 用于 GraphQL 全局引用。</p>
         </div>
         <div>
           <span class="about-number">03</span>

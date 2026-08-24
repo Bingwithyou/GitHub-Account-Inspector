@@ -1,4 +1,12 @@
 const API_ROOT = 'https://api.github.com/users/';
+const API_HEADERS = {
+  Accept: 'application/vnd.github+json',
+  'X-GitHub-Api-Version': '2022-11-28',
+};
+const CACHE_KEY = 'gitscope-account-cache-v2';
+const HISTORY_KEY = 'gitscope-recent-searches-v1';
+const CACHE_TTL = 15 * 60 * 1000;
+const HISTORY_LIMIT = 6;
 
 const form = document.querySelector('#search-form');
 const input = document.querySelector('#username');
@@ -6,6 +14,9 @@ const searchButton = document.querySelector('#search-button');
 const statusPanel = document.querySelector('#status-panel');
 const result = document.querySelector('#result');
 const loadingTemplate = document.querySelector('#loading-template');
+const recentSearches = document.querySelector('#recent-searches');
+const recentList = document.querySelector('#recent-list');
+const reposGrid = document.querySelector('#repos-grid');
 
 const fields = {
   avatar: document.querySelector('#avatar'),
@@ -34,10 +45,15 @@ const numberFormat = new Intl.NumberFormat('zh-CN');
 const longDateFormat = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 const shortDateFormat = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
 const yearFormat = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+let currentProfile = null;
+let currentRepositories = [];
 let currentAgeDays = 0;
 let ageDisplayMode = 'days';
 let toastTimer;
 let toastHideTimer;
+let activeController;
+let requestSequence = 0;
 
 function normalizeUsername(value) {
   return value.trim().replace(/^@/, '');
@@ -45,6 +61,100 @@ function normalizeUsername(value) {
 
 function isValidUsername(username) {
   return /^(?!-)(?!.*--)[a-zA-Z0-9-]{1,39}(?<!-)$/.test(username);
+}
+
+function readStorage(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writeStorage(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function removeStorage(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Storage can be unavailable in private or restricted browser contexts.
+  }
+}
+
+function getCachedAccount(username) {
+  const storedCache = readStorage(CACHE_KEY, {});
+  const cache = storedCache && typeof storedCache === 'object' && !Array.isArray(storedCache) ? storedCache : {};
+  const key = username.toLowerCase();
+  const entry = cache[key];
+  if (!entry) return null;
+
+  if (!entry.cachedAt || Date.now() - entry.cachedAt > CACHE_TTL) {
+    delete cache[key];
+    writeStorage(CACHE_KEY, cache);
+    return null;
+  }
+
+  return entry;
+}
+
+function cacheAccount(user, repositories, reposState) {
+  const storedCache = readStorage(CACHE_KEY, {});
+  const cache = storedCache && typeof storedCache === 'object' && !Array.isArray(storedCache) ? storedCache : {};
+  cache[user.login.toLowerCase()] = {
+    user,
+    repositories,
+    reposState,
+    cachedAt: Date.now(),
+  };
+
+  const trimmedEntries = Object.entries(cache)
+    .sort(([, a], [, b]) => (b.cachedAt || 0) - (a.cachedAt || 0))
+    .slice(0, 12);
+  writeStorage(CACHE_KEY, Object.fromEntries(trimmedEntries));
+}
+
+function renderHistory() {
+  const storedHistory = readStorage(HISTORY_KEY, []);
+  const historyItems = Array.isArray(storedHistory) ? storedHistory : [];
+  recentList.replaceChildren();
+  recentSearches.hidden = historyItems.length === 0;
+
+  historyItems.forEach((item) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'recent-user';
+    button.dataset.recentUser = item.login;
+    button.setAttribute('aria-label', `再次查询 ${item.login}`);
+
+    const avatar = document.createElement('img');
+    avatar.src = item.avatarUrl;
+    avatar.alt = '';
+    avatar.loading = 'lazy';
+
+    const login = document.createElement('span');
+    login.textContent = `@${item.login}`;
+    button.append(avatar, login);
+    recentList.append(button);
+  });
+}
+
+function addToHistory(user) {
+  const storedHistory = readStorage(HISTORY_KEY, []);
+  const historyItems = Array.isArray(storedHistory) ? storedHistory : [];
+  const nextHistory = [
+    { login: user.login, avatarUrl: user.avatar_url, viewedAt: Date.now() },
+    ...historyItems.filter((item) => item.login.toLowerCase() !== user.login.toLowerCase()),
+  ].slice(0, HISTORY_LIMIT);
+  writeStorage(HISTORY_KEY, nextHistory);
+  renderHistory();
 }
 
 function setLoading(isLoading) {
@@ -145,10 +255,31 @@ function addMetaItem(container, icon, content, href) {
   container.append(item);
 }
 
-function renderProfile(user, response) {
+function getRateInfo(response) {
+  if (!response) return null;
+  return {
+    remaining: response.headers.get('x-ratelimit-remaining'),
+    limit: response.headers.get('x-ratelimit-limit'),
+  };
+}
+
+function renderRateLimit(rateInfo, cachedAt) {
+  if (cachedAt) {
+    const minutes = Math.floor((Date.now() - cachedAt) / 60_000);
+    fields.rateLimit.textContent = `本地缓存 · ${minutes < 1 ? '刚刚' : `${minutes} 分钟前`}更新 · 未消耗 API 请求`;
+    return;
+  }
+
+  fields.rateLimit.textContent = rateInfo?.remaining && rateInfo?.limit
+    ? `GitHub REST API · 本时段剩余 ${rateInfo.remaining} / ${rateInfo.limit} 次请求`
+    : '数据来自 GitHub REST API';
+}
+
+function renderProfile(user, { rateInfo = null, cachedAt = null } = {}) {
   const createdAt = new Date(user.created_at);
   const updatedAt = new Date(user.updated_at);
   const displayName = user.name || user.login;
+  currentProfile = user;
 
   fields.avatar.src = user.avatar_url;
   fields.avatar.alt = `${displayName} 的 GitHub 头像`;
@@ -173,18 +304,116 @@ function renderProfile(user, response) {
   fields.meta.replaceChildren();
   addMetaItem(fields.meta, '⌖', user.location);
   addMetaItem(fields.meta, '◫', user.company);
-  const blogUrl = safeExternalUrl(user.blog);
-  addMetaItem(fields.meta, '↗', user.blog, blogUrl);
-
-  const remaining = response.headers.get('x-ratelimit-remaining');
-  const limit = response.headers.get('x-ratelimit-limit');
-  fields.rateLimit.textContent = remaining && limit
-    ? `GitHub REST API · 本时段剩余 ${remaining} / ${limit} 次请求`
-    : '数据来自 GitHub REST API';
+  addMetaItem(fields.meta, '↗', user.blog, safeExternalUrl(user.blog));
+  renderRateLimit(rateInfo, cachedAt);
 
   statusPanel.hidden = true;
   result.hidden = false;
   result.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function selectRepresentativeRepositories(repositories) {
+  const originalRepositories = repositories.filter((repository) => !repository.fork);
+  const candidates = originalRepositories.length ? originalRepositories : repositories;
+  return candidates
+    .sort((a, b) => b.stargazers_count - a.stargazers_count || b.forks_count - a.forks_count)
+    .slice(0, 6);
+}
+
+function renderRepositories(repositories, state = 'ready') {
+  currentRepositories = repositories;
+  reposGrid.replaceChildren();
+
+  if (state === 'unavailable') {
+    const message = document.createElement('p');
+    message.className = 'repos-empty';
+    message.textContent = '仓库信息暂时不可用，账户基础资料仍可正常查看。';
+    reposGrid.append(message);
+    return;
+  }
+
+  if (repositories.length === 0) {
+    const message = document.createElement('p');
+    message.className = 'repos-empty';
+    message.textContent = '这个账户暂时没有可展示的公开仓库。';
+    reposGrid.append(message);
+    return;
+  }
+
+  repositories.forEach((repository) => {
+    const card = document.createElement('a');
+    card.className = 'repo-card';
+    card.href = repository.html_url;
+    card.target = '_blank';
+    card.rel = 'noreferrer';
+    card.setAttribute('aria-label', `查看仓库 ${repository.name}`);
+
+    const top = document.createElement('div');
+    top.className = 'repo-card-top';
+    const name = document.createElement('h4');
+    name.className = 'repo-card-name';
+    name.textContent = repository.name;
+    const arrow = document.createElement('span');
+    arrow.className = 'repo-arrow';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.textContent = '↗';
+    top.append(name, arrow);
+
+    const description = document.createElement('p');
+    description.className = 'repo-description';
+    description.textContent = repository.description || '暂无仓库描述。';
+
+    const meta = document.createElement('div');
+    meta.className = 'repo-meta';
+    if (repository.language) {
+      const language = document.createElement('span');
+      language.className = 'language';
+      language.textContent = repository.language;
+      meta.append(language);
+    }
+    const stars = document.createElement('span');
+    stars.textContent = `★ ${numberFormat.format(repository.stargazers_count)}`;
+    const forks = document.createElement('span');
+    forks.textContent = `⑂ ${numberFormat.format(repository.forks_count)}`;
+    meta.append(stars, forks);
+
+    card.append(top, description, meta);
+    reposGrid.append(card);
+  });
+}
+
+async function fetchRepositories(user, signal) {
+  if (!user.public_repos) return { repositories: [], state: 'ready', rateInfo: null };
+
+  try {
+    const url = `${API_ROOT}${encodeURIComponent(user.login)}/repos?type=owner&sort=updated&direction=desc&per_page=100`;
+    const response = await fetch(url, { headers: API_HEADERS, signal });
+    const rateInfo = getRateInfo(response);
+    if (!response.ok) return { repositories: [], state: 'unavailable', rateInfo };
+    const repositories = selectRepresentativeRepositories(await response.json());
+    return { repositories, state: 'ready', rateInfo };
+  } catch (error) {
+    if (error.name === 'AbortError') throw error;
+    console.warn('Repository lookup failed', error);
+    return { repositories: [], state: 'unavailable', rateInfo: null };
+  }
+}
+
+function buildAccountSummary() {
+  if (!currentProfile) return '';
+  const user = currentProfile;
+  const years = yearFormat.format(currentAgeDays / 365.2425);
+  const repositoryNames = currentRepositories.slice(0, 3).map((repository) => repository.name).join('、');
+  return [
+    `${user.name || user.login} (@${user.login})`,
+    `数字用户 ID：${user.id}`,
+    `注册日期：${longDateFormat.format(new Date(user.created_at))}`,
+    `注册时长：${numberFormat.format(currentAgeDays)} 天（约 ${years} 年）`,
+    `公开仓库：${numberFormat.format(user.public_repos)}`,
+    `关注者：${numberFormat.format(user.followers)}`,
+    repositoryNames ? `代表仓库：${repositoryNames}` : null,
+    `GitHub：${user.html_url}`,
+  ].filter(Boolean).join('\n');
 }
 
 async function lookup(username, { updateUrl = true } = {}) {
@@ -203,6 +432,10 @@ async function lookup(username, { updateUrl = true } = {}) {
     return;
   }
 
+  activeController?.abort();
+  activeController = new AbortController();
+  const { signal } = activeController;
+  const requestId = ++requestSequence;
   setLoading(true);
   showLoading();
 
@@ -213,11 +446,17 @@ async function lookup(username, { updateUrl = true } = {}) {
   }
 
   try {
+    const cached = getCachedAccount(normalized);
+    if (cached) {
+      addToHistory(cached.user);
+      renderProfile(cached.user, { cachedAt: cached.cachedAt });
+      renderRepositories(cached.repositories || [], cached.reposState || 'ready');
+      return;
+    }
+
     const response = await fetch(`${API_ROOT}${encodeURIComponent(normalized)}`, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-      },
+      headers: API_HEADERS,
+      signal,
     });
 
     if (response.status === 404) {
@@ -235,13 +474,18 @@ async function lookup(username, { updateUrl = true } = {}) {
     if (!response.ok) throw new Error(`GitHub API returned ${response.status}`);
 
     const user = await response.json();
-    renderProfile(user, response);
-
+    const repositoriesResult = await fetchRepositories(user, signal);
+    const rateInfo = repositoriesResult.rateInfo || getRateInfo(response);
+    addToHistory(user);
+    renderProfile(user, { rateInfo });
+    renderRepositories(repositoriesResult.repositories, repositoriesResult.state);
+    cacheAccount(user, repositoriesResult.repositories, repositoriesResult.state);
   } catch (error) {
+    if (error.name === 'AbortError') return;
     console.error(error);
     showError('暂时无法连接 GitHub', '请检查网络连接，或稍后再试。');
   } finally {
-    setLoading(false);
+    if (requestId === requestSequence) setLoading(false);
   }
 }
 
@@ -254,6 +498,28 @@ document.querySelectorAll('[data-user]').forEach((button) => {
   button.addEventListener('click', () => lookup(button.dataset.user));
 });
 
+recentList.addEventListener('click', (event) => {
+  const button = event.target.closest('[data-recent-user]');
+  if (button) lookup(button.dataset.recentUser);
+});
+
+document.querySelector('#clear-history').addEventListener('click', () => {
+  removeStorage(HISTORY_KEY);
+  removeStorage(CACHE_KEY);
+  renderHistory();
+  if (currentProfile) fields.rateLimit.textContent = '当前结果仍在页面中 · 本地查询历史与缓存已清空';
+  showToast('本地查询历史与缓存已清空');
+});
+
+document.querySelectorAll('[data-help-toggle]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const help = document.querySelector(`#${button.dataset.helpToggle}`);
+    const willOpen = help.hidden;
+    help.hidden = !willOpen;
+    button.setAttribute('aria-expanded', String(willOpen));
+  });
+});
+
 document.querySelectorAll('[data-copy]').forEach((button) => {
   button.addEventListener('click', async () => {
     const value = document.querySelector(`#${button.dataset.copy}`).textContent;
@@ -261,13 +527,26 @@ document.querySelectorAll('[data-copy]').forEach((button) => {
       await copyText(value);
       const previous = button.textContent;
       button.textContent = '已复制';
-      showToast(button.dataset.copy === 'user-id' ? '数字 ID 已复制' : 'Node ID 已复制');
+      showToast(button.dataset.copy === 'user-id' ? '数字用户 ID 已复制' : 'Node ID 已复制');
       setTimeout(() => { button.textContent = previous; }, 1400);
     } catch (error) {
       console.error(error);
       showToast('复制失败，请手动复制', 'error');
     }
   });
+});
+
+document.querySelector('#copy-summary-button').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  try {
+    await copyText(buildAccountSummary());
+    button.textContent = '✓ 摘要已复制';
+    showToast('账户摘要已复制');
+    setTimeout(() => { button.textContent = '复制账户摘要'; }, 1800);
+  } catch (error) {
+    console.error(error);
+    showToast('复制失败，请稍后重试', 'error');
+  }
 });
 
 document.querySelector('#share-button').addEventListener('click', async (event) => {
@@ -288,5 +567,6 @@ fields.ageToggle.addEventListener('click', () => {
   renderAccountAge();
 });
 
+renderHistory();
 const initialUser = new URLSearchParams(window.location.search).get('user');
 if (initialUser) lookup(initialUser, { updateUrl: false });
