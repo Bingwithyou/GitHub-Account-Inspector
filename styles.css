@@ -33,7 +33,7 @@ a { color: inherit; }
 .skip-link {
   position: fixed;
   top: 12px;
-  left: 12px;
+  left: 50%;
   z-index: 50;
   padding: 11px 15px;
   border: 2px solid var(--ink);
@@ -43,10 +43,10 @@ a { color: inherit; }
   font-size: 12px;
   font-weight: 800;
   text-decoration: none;
-  transform: translateY(-160%);
+  transform: translate(-50%, -160%);
   transition: transform 140ms ease;
 }
-.skip-link:focus { transform: translateY(0); }
+.skip-link:focus { transform: translate(-50%, 0); }
 
 :where(a, button, input):focus-visible {
   outline: 3px solid var(--accent);

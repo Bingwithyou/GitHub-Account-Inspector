@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#f4f1ea" />
+    <title>页面未找到 · GitScope</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23171715'/%3E%3Cpath d='M18 22h28M18 32h18M18 42h23' stroke='%23f3f0e8' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <style>
+      :root { --paper: #f3f0e8; --ink: #171715; --muted: #6e6b63; --line: #c9c3b6; --accent: #e4492e; --white: #fffdf7; }
+      * { box-sizing: border-box; }
+      body { min-width: 320px; min-height: 100svh; margin: 0; display: flex; flex-direction: column; background: var(--paper); color: var(--ink); font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+      body::after { content: ""; position: fixed; inset: 0; pointer-events: none; opacity: .2; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.08'/%3E%3C/svg%3E"); }
+      header, main, footer { width: min(1180px, calc(100% - 48px)); margin-inline: auto; }
+      header { min-height: 86px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
+      .brand { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font: 700 21px Georgia, serif; letter-spacing: -.03em; }
+      .mark { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid var(--ink); border-radius: 50%; font-family: sans-serif; }
+      .record { color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .18em; }
+      main { flex: 1; display: grid; grid-template-columns: minmax(240px, .8fr) 1.2fr; align-items: center; gap: clamp(36px, 8vw, 120px); padding: 72px 0; }
+      .number { margin: 0; color: var(--accent); font: italic 500 clamp(150px, 25vw, 310px)/.76 Georgia, serif; letter-spacing: -.09em; }
+      .eyebrow { margin: 0 0 22px; color: var(--accent); font-size: 10px; font-weight: 800; letter-spacing: .18em; }
+      h1 { max-width: 620px; margin: 0; font: 500 clamp(44px, 6vw, 76px)/.98 Georgia, serif; letter-spacing: -.055em; }
+      .copy { max-width: 490px; margin: 26px 0 35px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+      .home-link { display: inline-flex; align-items: center; gap: 32px; padding: 17px 21px; border: 1px solid var(--ink); background: var(--white); color: var(--ink); box-shadow: 6px 6px 0 var(--ink); text-decoration: none; font-size: 12px; font-weight: 800; transition: transform 160ms ease, box-shadow 160ms ease; }
+      .home-link span { color: var(--accent); font-size: 20px; font-weight: 400; }
+      .home-link:hover, .home-link:focus-visible { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--accent); outline: 3px solid var(--accent); outline-offset: 4px; }
+      footer { min-height: 84px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 20px; color: var(--muted); font-size: 10px; letter-spacing: .04em; }
+      footer p { margin: 0; }
+      footer b { color: var(--accent); font-weight: 400; }
+      @media (max-width: 700px) {
+        header, main, footer { width: calc(100% - 28px); }
+        header { min-height: 70px; }
+        main { grid-template-columns: 1fr; gap: 30px; padding: 55px 0 70px; }
+        .number { font-size: clamp(130px, 46vw, 190px); }
+        h1 { font-size: clamp(44px, 14vw, 62px); }
+        footer { padding: 24px 0; flex-direction: column; align-items: flex-start; }
+      }
+      @media (prefers-reduced-motion: reduce) { * { transition-duration: .01ms !important; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="https://bingwithyou.github.io/GitHub-Account-Inspector/" aria-label="GitScope 首页"><span class="mark" aria-hidden="true">≡</span>GitScope</a>
+      <span class="record">RECORD NOT FOUND</span>
+    </header>
+    <main>
+      <p class="number" aria-hidden="true">404</p>
+      <div>
+        <p class="eyebrow">NO MATCHING RECORD</p>
+        <h1>这条记录不存在。</h1>
+        <p class="copy">你访问的地址可能已经移动、被删除，或者只是一个尚未存在的账户档案。回到查询页，再输入一个 GitHub 用户名试试看。</p>
+        <a class="home-link" href="https://bingwithyou.github.io/GitHub-Account-Inspector/">返回 GitScope 首页 <span aria-hidden="true">→</span></a>
+      </div>
+    </main>
+    <footer>
+      <p>GitScope <b>—</b> A quiet lens on public code.</p>
+      <p>404 · END OF RECORD</p>
+    </footer>
+  </body>
+</html>
