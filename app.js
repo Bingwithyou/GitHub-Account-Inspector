@@ -16,6 +16,9 @@ const fields = {
   type: document.querySelector('#account-type'),
   joinDate: document.querySelector('#join-date'),
   age: document.querySelector('#account-age'),
+  ageUnit: document.querySelector('#account-age-unit'),
+  ageConversion: document.querySelector('#account-age-conversion'),
+  ageToggle: document.querySelector('#age-toggle'),
   id: document.querySelector('#user-id'),
   nodeId: document.querySelector('#node-id'),
   repos: document.querySelector('#public-repos'),
@@ -30,6 +33,11 @@ const fields = {
 const numberFormat = new Intl.NumberFormat('zh-CN');
 const longDateFormat = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: 'long', day: 'numeric' });
 const shortDateFormat = new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' });
+const yearFormat = new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+let currentAgeDays = 0;
+let ageDisplayMode = 'days';
+let toastTimer;
+let toastHideTimer;
 
 function normalizeUsername(value) {
   return value.trim().replace(/^@/, '');
@@ -69,6 +77,52 @@ function daysSince(isoDate) {
   return Math.max(0, Math.floor((Date.now() - created.getTime()) / 86_400_000));
 }
 
+function renderAccountAge() {
+  const years = currentAgeDays / 365.2425;
+  const showYears = ageDisplayMode === 'years';
+  fields.age.textContent = showYears ? yearFormat.format(years) : numberFormat.format(currentAgeDays);
+  fields.ageUnit.textContent = showYears ? '年' : '天';
+  fields.ageConversion.textContent = showYears
+    ? `共 ${numberFormat.format(currentAgeDays)} 天`
+    : `约合 ${yearFormat.format(years)} 年`;
+  fields.ageToggle.textContent = showYears ? '查看天数' : '换算为年';
+  fields.ageToggle.setAttribute('aria-label', showYears ? '将注册时长切换为天数' : '将注册时长换算为年数');
+}
+
+function showToast(message, type = 'success') {
+  const toast = document.querySelector('#toast');
+  const toastMessage = document.querySelector('#toast-message');
+  const toastIcon = document.querySelector('#toast-icon');
+  clearTimeout(toastTimer);
+  clearTimeout(toastHideTimer);
+  toastMessage.textContent = message;
+  toastIcon.textContent = type === 'error' ? '!' : '✓';
+  toast.classList.toggle('is-error', type === 'error');
+  toast.hidden = false;
+  requestAnimationFrame(() => toast.classList.add('is-visible'));
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('is-visible');
+    toastHideTimer = setTimeout(() => { toast.hidden = true; }, 200);
+  }, 2200);
+}
+
+async function copyText(value) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.append(textarea);
+  textarea.select();
+  const copied = document.execCommand('copy');
+  textarea.remove();
+  if (!copied) throw new Error('Copy command failed');
+}
+
 function safeExternalUrl(url) {
   if (!url) return null;
   try {
@@ -104,8 +158,10 @@ function renderProfile(user, response) {
   fields.bio.textContent = user.bio || '这个账户暂时没有填写个人简介。';
   fields.type.textContent = user.type.toUpperCase();
   fields.joinDate.textContent = longDateFormat.format(createdAt);
-  fields.age.textContent = numberFormat.format(daysSince(user.created_at));
-  fields.id.textContent = numberFormat.format(user.id);
+  currentAgeDays = daysSince(user.created_at);
+  ageDisplayMode = 'days';
+  renderAccountAge();
+  fields.id.textContent = String(user.id);
   fields.nodeId.textContent = user.node_id;
   fields.repos.textContent = numberFormat.format(user.public_repos);
   fields.followers.textContent = numberFormat.format(user.followers);
@@ -200,19 +256,36 @@ document.querySelectorAll('[data-user]').forEach((button) => {
 
 document.querySelectorAll('[data-copy]').forEach((button) => {
   button.addEventListener('click', async () => {
-    const value = document.querySelector(`#${button.dataset.copy}`).textContent.replaceAll(',', '');
-    await navigator.clipboard.writeText(value);
-    const previous = button.textContent;
-    button.textContent = '已复制';
-    setTimeout(() => { button.textContent = previous; }, 1400);
+    const value = document.querySelector(`#${button.dataset.copy}`).textContent;
+    try {
+      await copyText(value);
+      const previous = button.textContent;
+      button.textContent = '已复制';
+      showToast(button.dataset.copy === 'user-id' ? '数字 ID 已复制' : 'Node ID 已复制');
+      setTimeout(() => { button.textContent = previous; }, 1400);
+    } catch (error) {
+      console.error(error);
+      showToast('复制失败，请手动复制', 'error');
+    }
   });
 });
 
 document.querySelector('#share-button').addEventListener('click', async (event) => {
-  await navigator.clipboard.writeText(window.location.href);
   const button = event.currentTarget;
-  button.textContent = '链接已复制';
-  setTimeout(() => { button.textContent = '复制查询链接'; }, 1400);
+  try {
+    await copyText(window.location.href);
+    button.textContent = '✓ 链接已复制';
+    showToast('查询链接已复制，可以分享了');
+    setTimeout(() => { button.textContent = '复制查询链接'; }, 1800);
+  } catch (error) {
+    console.error(error);
+    showToast('复制失败，请从地址栏复制链接', 'error');
+  }
+});
+
+fields.ageToggle.addEventListener('click', () => {
+  ageDisplayMode = ageDisplayMode === 'days' ? 'years' : 'days';
+  renderAccountAge();
 });
 
 const initialUser = new URLSearchParams(window.location.search).get('user');

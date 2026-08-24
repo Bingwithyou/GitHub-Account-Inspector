@@ -90,8 +90,11 @@
           <div class="age-card">
             <p class="overline">MEMBER SINCE</p>
             <p class="join-date" id="join-date"></p>
-            <p class="account-age"><strong id="account-age"></strong> 天</p>
-            <p class="muted">在 GitHub 上留下代码与足迹</p>
+            <p class="account-age"><strong id="account-age"></strong><span id="account-age-unit">天</span></p>
+            <div class="age-tools">
+              <p class="muted" id="account-age-conversion"></p>
+              <button class="age-toggle" id="age-toggle" type="button">换算为年</button>
+            </div>
           </div>
         </div>
 
@@ -160,6 +163,11 @@
       <p>GitScope <span>—</span> A quiet lens on public code.</p>
       <p>Not affiliated with GitHub, Inc.</p>
     </footer>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden>
+      <span class="toast-icon" id="toast-icon" aria-hidden="true">✓</span>
+      <span id="toast-message"></span>
+    </div>
 
     <template id="loading-template">
       <div class="loading-state">
