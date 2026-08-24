@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="查询 GitHub 账户注册时间、数字 ID 与公开资料。" />
+    <meta name="theme-color" content="#f4f1ea" />
+    <title>GitScope · GitHub 账户查询</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='32' fill='%23171715'/%3E%3Cpath d='M18 22h28M18 32h18M18 42h23' stroke='%23f3f0e8' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://api.github.com" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="GitScope 首页">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" role="img">
+            <path d="M4.5 6.75h15M4.5 12h9M4.5 17.25h12" />
+          </svg>
+        </span>
+        <span>GitScope</span>
+      </a>
+      <a class="github-link" href="https://github.com" target="_blank" rel="noreferrer">
+        GitHub
+        <span aria-hidden="true">↗</span>
+      </a>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div class="eyebrow"><span></span> PUBLIC DATA LOOKUP</div>
+        <h1 id="page-title">一个用户名，<br /><em>看见账户的时间。</em></h1>
+        <p class="hero-copy">
+          查询 GitHub 账户的注册日期、永久数字 ID 与公开档案。无需登录，不会保存你的查询。
+        </p>
+
+        <form class="search-form" id="search-form" novalidate>
+          <label class="sr-only" for="username">GitHub 用户名</label>
+          <div class="search-box" id="search-box">
+            <span class="at-sign" aria-hidden="true">@</span>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              inputmode="text"
+              autocomplete="off"
+              autocapitalize="none"
+              spellcheck="false"
+              maxlength="39"
+              placeholder="输入 GitHub 用户名"
+              aria-describedby="search-hint"
+            />
+            <button type="submit" id="search-button">
+              <span class="button-label">查询账户</span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+          <p class="search-hint" id="search-hint">例如：octocat、torvalds 或你自己的用户名</p>
+        </form>
+
+        <div class="quick-searches" aria-label="快速查询">
+          <span>试试看</span>
+          <button type="button" data-user="octocat">@octocat</button>
+          <button type="button" data-user="torvalds">@torvalds</button>
+          <button type="button" data-user="yyx990803">@yyx990803</button>
+        </div>
+      </section>
+
+      <section class="status-panel" id="status-panel" aria-live="polite" hidden></section>
+
+      <section class="result" id="result" aria-labelledby="result-name" hidden>
+        <div class="result-rule"><span>ACCOUNT RECORD</span><span id="record-number">NO. —</span></div>
+
+        <div class="profile-grid">
+          <div class="identity-card">
+            <div class="avatar-wrap">
+              <img id="avatar" src="" alt="" width="152" height="152" />
+              <span class="account-type" id="account-type">USER</span>
+            </div>
+            <div class="identity-copy">
+              <p class="overline">GITHUB PROFILE</p>
+              <h2 id="result-name"></h2>
+              <a id="result-login" href="#" target="_blank" rel="noreferrer"></a>
+              <p class="bio" id="bio"></p>
+              <div class="profile-meta" id="profile-meta"></div>
+            </div>
+          </div>
+
+          <div class="age-card">
+            <p class="overline">MEMBER SINCE</p>
+            <p class="join-date" id="join-date"></p>
+            <p class="account-age"><strong id="account-age"></strong> 天</p>
+            <p class="muted">在 GitHub 上留下代码与足迹</p>
+          </div>
+        </div>
+
+        <div class="data-grid">
+          <article class="data-item featured">
+            <div>
+              <p class="data-label">永久数字 ID</p>
+              <p class="data-value mono" id="user-id"></p>
+            </div>
+            <button class="copy-button" type="button" data-copy="user-id" aria-label="复制数字 ID">复制</button>
+          </article>
+          <article class="data-item">
+            <p class="data-label">公开仓库</p>
+            <p class="data-value" id="public-repos"></p>
+          </article>
+          <article class="data-item">
+            <p class="data-label">关注者</p>
+            <p class="data-value" id="followers"></p>
+          </article>
+          <article class="data-item">
+            <p class="data-label">正在关注</p>
+            <p class="data-value" id="following"></p>
+          </article>
+          <article class="data-item node-item">
+            <div>
+              <p class="data-label">Node ID</p>
+              <p class="data-value mono small" id="node-id"></p>
+            </div>
+            <button class="copy-button" type="button" data-copy="node-id" aria-label="复制 Node ID">复制</button>
+          </article>
+          <article class="data-item">
+            <p class="data-label">最后更新</p>
+            <p class="data-value date-value" id="updated-at"></p>
+          </article>
+        </div>
+
+        <div class="result-footer">
+          <p id="rate-limit">数据来自 GitHub REST API</p>
+          <div class="result-actions">
+            <button type="button" id="share-button">复制查询链接</button>
+            <a id="view-profile" href="#" target="_blank" rel="noreferrer">查看 GitHub 主页 ↗</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="about" aria-label="说明">
+        <div>
+          <span class="about-number">01</span>
+          <h3>公开且透明</h3>
+          <p>所有信息均来自 GitHub 公开接口，页面不设置后端，也不收集查询记录。</p>
+        </div>
+        <div>
+          <span class="about-number">02</span>
+          <h3>ID 是什么？</h3>
+          <p>用户名可以修改，数字 ID 则永久对应同一个账户，适合做身份关联。</p>
+        </div>
+        <div>
+          <span class="about-number">03</span>
+          <h3>访问限制</h3>
+          <p>匿名访问通常每个 IP 每小时可请求 60 次；本页面不会要求或存储 Token。</p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>GitScope <span>—</span> A quiet lens on public code.</p>
+      <p>Not affiliated with GitHub, Inc.</p>
+    </footer>
+
+    <template id="loading-template">
+      <div class="loading-state">
+        <span class="spinner" aria-hidden="true"></span>
+        <div><strong>正在寻找账户</strong><small>正在请求 GitHub 公开资料…</small></div>
+      </div>
+    </template>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>
