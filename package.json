@@ -1,0 +1,17 @@
+{
+  "name": "github-account-inspector",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A privacy-friendly GitHub public account inspector.",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "serve": "14.2.6"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

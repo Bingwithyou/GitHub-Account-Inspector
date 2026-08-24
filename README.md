@@ -22,6 +22,18 @@ npx serve .
 
 > 不建议直接双击 `index.html` 预览，因为部分浏览器会限制 `file://` 页面发起网络请求。
 
+## 自动化测试
+
+测试会拦截 GitHub API 并使用固定数据，不消耗真实 API 请求额度：
+
+```bash
+npm install
+npx playwright install chromium
+npm test
+```
+
+推送或提交 Pull Request 时，GitHub Actions 会先执行浏览器测试；只有测试通过后，`main` 分支才会部署到 Pages。
+
 ## 部署到 GitHub Pages
 
 1. 在 GitHub 新建仓库，将本目录中的所有文件推送到 `main` 分支。
