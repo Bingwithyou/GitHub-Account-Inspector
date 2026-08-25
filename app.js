@@ -7,6 +7,48 @@ const CACHE_KEY = 'gitscope-account-cache-v2';
 const HISTORY_KEY = 'gitscope-recent-searches-v1';
 const CACHE_TTL = 15 * 60 * 1000;
 const HISTORY_LIMIT = 6;
+// Colors follow GitHub Linguist's language definitions:
+// https://github.com/github-linguist/linguist/blob/main/lib/linguist/languages.yml
+const LANGUAGE_COLORS = Object.freeze({
+  JavaScript: '#f1e05a',
+  TypeScript: '#3178c6',
+  Python: '#3572A5',
+  Java: '#b07219',
+  C: '#555555',
+  'C++': '#f34b7d',
+  'C#': '#7355dd',
+  PHP: '#4F5D95',
+  Ruby: '#701516',
+  Go: '#00ADD8',
+  Rust: '#dea584',
+  Swift: '#F05138',
+  Kotlin: '#A97BFF',
+  Dart: '#00B4AB',
+  Shell: '#89e051',
+  PowerShell: '#012456',
+  HTML: '#e34c26',
+  CSS: '#663399',
+  Vue: '#41b883',
+  Svelte: '#ff3e00',
+  SCSS: '#c6538c',
+  Less: '#1d365d',
+  'Objective-C': '#438eff',
+  R: '#198CE7',
+  MATLAB: '#e16737',
+  Lua: '#000080',
+  Perl: '#0298c3',
+  Haskell: '#5e5086',
+  Elixir: '#6e4a7e',
+  Erlang: '#B83998',
+  Scala: '#c22d40',
+  Groovy: '#4298b8',
+  Solidity: '#AA6746',
+  Zig: '#ec915c',
+  Nix: '#7e7eff',
+  Dockerfile: '#384d54',
+  Assembly: '#6E4C13',
+  'Jupyter Notebook': '#DA5B0B',
+});
 
 const form = document.querySelector('#search-form');
 const input = document.querySelector('#username');
@@ -320,6 +362,16 @@ function selectRepresentativeRepositories(repositories) {
     .slice(0, 6);
 }
 
+function getLanguageColor(language) {
+  if (LANGUAGE_COLORS[language]) return LANGUAGE_COLORS[language];
+
+  let hash = 0;
+  for (const character of language) {
+    hash = ((hash << 5) - hash + character.codePointAt(0)) | 0;
+  }
+  return `hsl(${Math.abs(hash) % 360} 58% 48%)`;
+}
+
 function createSvgIcon(viewBox) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', viewBox);
@@ -410,6 +462,7 @@ function renderRepositories(repositories, state = 'ready') {
       const language = document.createElement('span');
       language.className = 'language';
       language.textContent = repository.language;
+      language.style.setProperty('--language-color', getLanguageColor(repository.language));
       meta.append(language);
     }
     const stars = document.createElement('span');
