@@ -89,6 +89,11 @@ test('用户可以查询账户、查看代表仓库并获得本地历史', async
   await expect(page.getByRole('heading', { name: 'Test Account' })).toBeVisible();
   await expect(page.locator('#user-id')).toHaveText('123456');
   await expect(page.locator('.repo-card-name')).toHaveText(['popular-project', 'quiet-project']);
+  await expect(
+    page.getByRole('link', {
+      name: '查看仓库 popular-project，语言 JavaScript，120 个星标，18 个 Fork',
+    }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: '再次查询 testaccount' })).toBeVisible();
   expect(getRequestCount()).toBe(2);
 });

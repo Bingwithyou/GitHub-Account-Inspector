@@ -320,6 +320,48 @@ function selectRepresentativeRepositories(repositories) {
     .slice(0, 6);
 }
 
+function createSvgIcon(viewBox) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', viewBox);
+  svg.setAttribute('aria-hidden', 'true');
+  svg.classList.add('repo-icon');
+  return svg;
+}
+
+function createStarIcon() {
+  const svg = createSvgIcon('0 0 16 16');
+  const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', 'M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Zm0 2.445L6.615 5.5a.75.75 0 0 1-.564.41l-3.097.45 2.24 2.184a.75.75 0 0 1 .216.664l-.528 3.084 2.769-1.456a.75.75 0 0 1 .698 0l2.77 1.456-.53-3.084a.75.75 0 0 1 .216-.664l2.24-2.183-3.096-.45a.75.75 0 0 1-.564-.41L8 2.694Z');
+  path.setAttribute('fill', 'currentColor');
+  path.setAttribute('fill-rule', 'evenodd');
+  svg.append(path);
+  return svg;
+}
+
+function createForkIcon() {
+  const svg = createSvgIcon('0 0 24 24');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '2.2');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+
+  const shapes = [
+    ['circle', { cx: '12', cy: '18', r: '3' }],
+    ['circle', { cx: '6', cy: '6', r: '3' }],
+    ['circle', { cx: '18', cy: '6', r: '3' }],
+    ['path', { d: 'M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9m6 3v3' }],
+  ];
+
+  shapes.forEach(([tagName, attributes]) => {
+    const shape = document.createElementNS('http://www.w3.org/2000/svg', tagName);
+    Object.entries(attributes).forEach(([name, value]) => shape.setAttribute(name, value));
+    svg.append(shape);
+  });
+
+  return svg;
+}
+
 function renderRepositories(repositories, state = 'ready') {
   currentRepositories = repositories;
   reposGrid.replaceChildren();
@@ -346,7 +388,6 @@ function renderRepositories(repositories, state = 'ready') {
     card.href = repository.html_url;
     card.target = '_blank';
     card.rel = 'noreferrer';
-    card.setAttribute('aria-label', `查看仓库 ${repository.name}`);
 
     const top = document.createElement('div');
     top.className = 'repo-card-top';
@@ -372,10 +413,28 @@ function renderRepositories(repositories, state = 'ready') {
       meta.append(language);
     }
     const stars = document.createElement('span');
-    stars.textContent = `★ ${numberFormat.format(repository.stargazers_count)}`;
+    stars.className = 'repo-stat';
+    const starCount = numberFormat.format(repository.stargazers_count);
+    stars.append(
+      createStarIcon(),
+      document.createTextNode(starCount),
+    );
     const forks = document.createElement('span');
-    forks.textContent = `⑂ ${numberFormat.format(repository.forks_count)}`;
+    forks.className = 'repo-stat';
+    const forkCount = numberFormat.format(repository.forks_count);
+    forks.append(
+      createForkIcon(),
+      document.createTextNode(forkCount),
+    );
     meta.append(stars, forks);
+
+    const accessibleName = [
+      `查看仓库 ${repository.name}`,
+      repository.language ? `语言 ${repository.language}` : null,
+      `${starCount} 个星标`,
+      `${forkCount} 个 Fork`,
+    ].filter(Boolean).join('，');
+    card.setAttribute('aria-label', accessibleName);
 
     card.append(top, description, meta);
     reposGrid.append(card);
