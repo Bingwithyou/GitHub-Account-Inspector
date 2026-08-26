@@ -12,6 +12,12 @@
 - 完整的 Open Graph、Twitter Card、结构化数据与分享封面
 - 与主站视觉一致的自定义 404 页面
 
+## 界面预览
+
+输入用户名即可查看查询结果，下图为查询 `Bingwithyou` 账户的实机运行效果：
+
+![GitScope 查询 Bingwithyou 账户的实机运行截图](assets/screenshot.png)
+
 ## 本地预览
 
 项目没有构建步骤。在项目目录运行任意静态文件服务器：
@@ -56,5 +62,8 @@ npm test
 ├── index.html
 ├── styles.css
 ├── app.js
+├── assets/
+│   ├── social-preview.png
+│   └── screenshot.png
 └── .github/workflows/deploy-pages.yml
 ```
