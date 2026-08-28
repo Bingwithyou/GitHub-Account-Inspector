@@ -57,10 +57,16 @@ jobs:
         uses: actions/checkout@v6
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      - name: Prepare production site
+        shell: bash
+        run: |
+          mkdir -p _site/assets
+          cp index.html 404.html styles.css app.js sitemap.xml .nojekyll _site/
+          cp assets/social-preview.png assets/favicon.svg _site/assets/
       - name: Upload site
         uses: actions/upload-pages-artifact@v4
         with:
-          path: .
+          path: _site
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

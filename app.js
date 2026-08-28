@@ -5,7 +5,7 @@ const API_HEADERS = {
 };
 const CACHE_KEY = 'gitscope-account-cache-v2';
 const HISTORY_KEY = 'gitscope-recent-searches-v1';
-const CACHE_TTL = 15 * 60 * 1000;
+const CACHE_TTL = 24 * 60 * 60 * 1000;
 const HISTORY_LIMIT = 6;
 // Colors follow GitHub Linguist's language definitions:
 // https://github.com/github-linguist/linguist/blob/main/lib/linguist/languages.yml

@@ -12,8 +12,13 @@ test('首页提供完整的搜索与社交分享元数据', async ({ page, reque
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute('content', /GitScope/);
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', /social-preview\.png$/);
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute('content', 'summary_large_image');
+  await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', './assets/favicon.svg');
 
   const cover = await request.get('/assets/social-preview.png');
   expect(cover.status()).toBe(200);
   expect(cover.headers()['content-type']).toContain('image/png');
+
+  const favicon = await request.get('/assets/favicon.svg');
+  expect(favicon.status()).toBe(200);
+  expect(favicon.headers()['content-type']).toContain('image/svg+xml');
 });
